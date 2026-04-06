@@ -29,7 +29,6 @@ for (const category of rowOrder) {
 
 const boardEl = document.getElementById("board");
 const tokensEl = document.getElementById("tokens");
-const sandboxGroupsEl = document.getElementById("sandbox-groups");
 const glueBtn = document.getElementById("glue-btn");
 const unglueBtn = document.getElementById("unglue-btn");
 const resetBtn = document.getElementById("reset-btn");
@@ -247,65 +246,34 @@ function renderTokenPools() {
   tokensEl.appendChild(help);
 }
 
-function getGroupMembers(groupId) {
-  return Object.entries(state.groups)
-    .filter(([, gid]) => gid === groupId)
-    .map(([id]) => id);
-}
-
-function validateCategories(ids) {
-  const categoriesSeen = new Set();
-  for (const id of ids) {
-    const { category } = parseToken(id);
-    if (categoriesSeen.has(category)) {
-      return "One group can only have one value per category.";
-    }
-    categoriesSeen.add(category);
+function areValidGlueSelection(selection) {
+  if (selection.length !== 2) {
+    return "Select exactly 2 items to glue.";
   }
+
+  const [a, b] = selection.map(parseToken);
+  if (a.category === b.category) {
+    return "Choose items from different categories.";
+  }
+
   return null;
 }
 
 function glueSelected() {
   const selection = [...state.selected];
-  if (selection.length < 2) {
-    setStatus("Select at least 2 items to create/extend a relation.");
+  const problem = areValidGlueSelection(selection);
+  if (problem) {
+    setStatus(problem);
     return;
   }
 
-  const existingGroupIds = [...new Set(selection.map((id) => state.groups[id]).filter(Boolean))];
-  const candidateIds = new Set(selection);
-
-  for (const gid of existingGroupIds) {
-    for (const memberId of getGroupMembers(gid)) {
-      candidateIds.add(memberId);
-    }
-  }
-
-  const categoryProblem = validateCategories([...candidateIds]);
-  if (categoryProblem) {
-    setStatus(categoryProblem);
-    return;
-  }
-
-  let targetGroupId;
-  if (existingGroupIds.length === 0) {
-    targetGroupId = state.nextGroupId++;
-  } else {
-    targetGroupId = existingGroupIds[0];
-  }
-
-  for (const id of candidateIds) {
-    state.groups[id] = targetGroupId;
-  }
-
-  for (const oldGroupId of existingGroupIds.slice(1)) {
-    for (const memberId of getGroupMembers(oldGroupId)) {
-      state.groups[memberId] = targetGroupId;
-    }
+  const groupId = state.nextGroupId++;
+  for (const id of selection) {
+    state.groups[id] = groupId;
   }
 
   state.selected.clear();
-  setStatus(`Updated relation group G${targetGroupId}.`);
+  setStatus(`Created glue group G${groupId}.`);
   render();
 }
 
@@ -321,7 +289,9 @@ function unglueSelected() {
     const gid = state.groups[id];
     if (!gid) continue;
 
-    const members = getGroupMembers(gid);
+    const members = Object.entries(state.groups)
+      .filter(([, groupId]) => groupId === gid)
+      .map(([memberId]) => memberId);
 
     for (const memberId of members) {
       delete state.groups[memberId];
@@ -355,61 +325,6 @@ function setStatus(text) {
 function render() {
   renderBoard();
   renderTokenPools();
-  renderSandboxGroups();
-}
-
-function renderSandboxGroups() {
-  const groups = {};
-  for (const [id, groupId] of Object.entries(state.groups)) {
-    if (!groups[groupId]) groups[groupId] = [];
-    groups[groupId].push(id);
-  }
-
-  sandboxGroupsEl.innerHTML = "";
-  const groupIds = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
-
-  if (groupIds.length === 0) {
-    const empty = document.createElement("p");
-    empty.textContent = "Brak relacji. Zaznacz minimum 2 etykiety i kliknij Glue Selected.";
-    sandboxGroupsEl.appendChild(empty);
-    return;
-  }
-
-  for (const groupId of groupIds) {
-    const card = document.createElement("div");
-    card.className = "sandbox-group";
-
-    const header = document.createElement("div");
-    header.className = "sandbox-group-header";
-
-    const title = document.createElement("p");
-    title.className = "sandbox-group-title";
-    title.textContent = `Group G${groupId}`;
-
-    const removeBtn = document.createElement("button");
-    removeBtn.type = "button";
-    removeBtn.textContent = "Remove Group";
-    removeBtn.addEventListener("click", () => {
-      for (const memberId of groups[groupId]) {
-        delete state.groups[memberId];
-      }
-      setStatus(`Removed group G${groupId}.`);
-      render();
-    });
-
-    header.appendChild(title);
-    header.appendChild(removeBtn);
-
-    const items = document.createElement("div");
-    items.className = "sandbox-group-items";
-    for (const id of groups[groupId]) {
-      items.appendChild(createTokenElement(id));
-    }
-
-    card.appendChild(header);
-    card.appendChild(items);
-    sandboxGroupsEl.appendChild(card);
-  }
 }
 
 glueBtn.addEventListener("click", glueSelected);
