@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Einstein Puzzle – Sprint 1 POC</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>Einstein Puzzle (Fish Puzzle) – POC</h1>
+        <p>
+          Drag items into the five houses. Select two items from different categories and click
+          <strong>Glue Selected</strong> to keep them linked.
+        </p>
+      </header>
+
+      <section class="controls card">
+        <button id="glue-btn" type="button">Glue Selected</button>
+        <button id="unglue-btn" type="button">Unglue Selected</button>
+        <button id="reset-btn" type="button">Reset Board</button>
+        <button id="save-btn" type="button">Save Session</button>
+        <button id="restore-btn" type="button">Restore Session</button>
+        <button id="clear-session-btn" type="button">Clear Session</button>
+        <button id="clear-deduction-btn" type="button">Clear Deduction Marks</button>
+        <p id="status" aria-live="polite"></p>
+      </section>
+
+      <section class="board card" id="board"></section>
+
+      <section class="tokens card" id="tokens"></section>
+
+      <section class="sandbox card">
+        <h2>Piaskownica powiązań</h2>
+        <p>Łącz etykiety (np. <em>Swede</em> + <em>Pall Mall</em>) bez przypisywania ich do domu.</p>
+        <div id="sandbox-groups"></div>
+      </section>
+
+      <section class="free-sandbox card">
+        <h2>Free Sandbox</h2>
+        <div class="sandbox-toolbar">
+          <button id="link-same" type="button">Link: same_house</button>
+          <button id="link-left" type="button">Link: left_of</button>
+          <button id="link-next" type="button">Link: next_to</button>
+          <button id="reset-selected-link" type="button">Reset selected link</button>
+        </div>
+        <div class="free-sandbox-stage" id="free-sandbox-stage">
+          <svg id="sandbox-links-svg"></svg>
+          <div id="free-sandbox-items"></div>
+        </div>
+        <div id="sandbox-links-list"></div>
+      </section>
+
+      <section class="deduction card">
+        <h2>Plansza dedukcji (wykreślanie cech)</h2>
+        <p>Klik na komórkę: puste → ✓ → ✗ → puste. Część pól uzupełnia się automatycznie.</p>
+        <div id="deduction-board"></div>
+      </section>
+    </main>
+
+    <aside class="clues-overlay card" aria-hidden="true">
+      <h2>Wskazówki</h2>
+      <ol>
+        <li>Norweg zamieszkuje pierwszy dom</li>
+        <li>Anglik mieszka w czerwonym domu</li>
+        <li>Zielony dom znajduje się po lewej stronie białego domu</li>
+        <li>Duńczyk pija herbatkę</li>
+        <li>Palacz Rothmansów mieszka obok hodowcy kotów</li>
+        <li>Mieszkaniec żółtego domu pali Dunhille</li>
+        <li>Niemiec pali Marlboro</li>
+        <li>Mieszkaniec środkowego domu pija mleko</li>
+        <li>Palacz Rothmansów ma sąsiada, który pija wodę</li>
+        <li>Palacz Pall Malli hoduje ptaki</li>
+        <li>Szwed hoduje psy</li>
+        <li>Norweg mieszka obok niebieskiego domu</li>
+        <li>Hodowca koni mieszka obok żółtego domu</li>
+        <li>Palacz Philip Morris pija piwo</li>
+        <li>W zielonym domu pija się kawę</li>
+      </ol>
+    </aside>
+
+    <script src="app.js"></script>
+  </body>
+</html>
