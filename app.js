@@ -16,16 +16,9 @@ const rowLabels = {
 };
 
 const houses = [1, 2, 3, 4, 5];
-const STORAGE_KEY = "einstein-puzzle-session-state-v1";
-const STORAGE_SCHEMA_VERSION = 2;
 const state = {
   assignments: {},
   groups: {},
-  sandbox: {
-    positions: {},
-    links: [],
-    nextLinkId: 1,
-  },
   selected: new Set(),
   nextGroupId: 1,
 };
@@ -36,20 +29,9 @@ for (const category of rowOrder) {
 
 const boardEl = document.getElementById("board");
 const tokensEl = document.getElementById("tokens");
-const sandboxGroupsEl = document.getElementById("sandbox-groups");
-const freeSandboxStageEl = document.getElementById("free-sandbox-stage");
-const freeSandboxItemsEl = document.getElementById("free-sandbox-items");
-const sandboxLinksSvgEl = document.getElementById("sandbox-links-svg");
-const sandboxLinksListEl = document.getElementById("sandbox-links-list");
 const glueBtn = document.getElementById("glue-btn");
 const unglueBtn = document.getElementById("unglue-btn");
 const resetBtn = document.getElementById("reset-btn");
-const saveBtn = document.getElementById("save-btn");
-const restoreBtn = document.getElementById("restore-btn");
-const clearSessionBtn = document.getElementById("clear-session-btn");
-const linkSameBtn = document.getElementById("link-same");
-const linkLeftBtn = document.getElementById("link-left");
-const linkNextBtn = document.getElementById("link-next");
 const statusEl = document.getElementById("status");
 
 function tokenId(category, value) {
@@ -59,34 +41,6 @@ function tokenId(category, value) {
 function parseToken(id) {
   const [category, value] = id.split(":");
   return { category, value };
-}
-
-function getAllTokenIds() {
-  const all = [];
-  for (const category of rowOrder) {
-    for (const value of categories[category]) {
-      all.push(tokenId(category, value));
-    }
-  }
-  return all;
-}
-
-function ensureSandboxPositions() {
-  const allIds = getAllTokenIds();
-  const existing = state.sandbox.positions;
-  const categoryIndex = Object.fromEntries(rowOrder.map((category, idx) => [category, idx]));
-  const perCategoryCursor = Object.fromEntries(rowOrder.map((category) => [category, 0]));
-
-  for (const id of allIds) {
-    if (existing[id]) continue;
-    const { category } = parseToken(id);
-    const row = categoryIndex[category];
-    const col = perCategoryCursor[category]++;
-    existing[id] = {
-      x: 16 + col * 110,
-      y: 16 + row * 68,
-    };
-  }
 }
 
 function findTokenHouse(token) {
@@ -292,65 +246,34 @@ function renderTokenPools() {
   tokensEl.appendChild(help);
 }
 
-function getGroupMembers(groupId) {
-  return Object.entries(state.groups)
-    .filter(([, gid]) => gid === groupId)
-    .map(([id]) => id);
-}
-
-function validateCategories(ids) {
-  const categoriesSeen = new Set();
-  for (const id of ids) {
-    const { category } = parseToken(id);
-    if (categoriesSeen.has(category)) {
-      return "One group can only have one value per category.";
-    }
-    categoriesSeen.add(category);
+function areValidGlueSelection(selection) {
+  if (selection.length !== 2) {
+    return "Select exactly 2 items to glue.";
   }
+
+  const [a, b] = selection.map(parseToken);
+  if (a.category === b.category) {
+    return "Choose items from different categories.";
+  }
+
   return null;
 }
 
 function glueSelected() {
   const selection = [...state.selected];
-  if (selection.length < 2) {
-    setStatus("Select at least 2 items to create/extend a relation.");
+  const problem = areValidGlueSelection(selection);
+  if (problem) {
+    setStatus(problem);
     return;
   }
 
-  const existingGroupIds = [...new Set(selection.map((id) => state.groups[id]).filter(Boolean))];
-  const candidateIds = new Set(selection);
-
-  for (const gid of existingGroupIds) {
-    for (const memberId of getGroupMembers(gid)) {
-      candidateIds.add(memberId);
-    }
-  }
-
-  const categoryProblem = validateCategories([...candidateIds]);
-  if (categoryProblem) {
-    setStatus(categoryProblem);
-    return;
-  }
-
-  let targetGroupId;
-  if (existingGroupIds.length === 0) {
-    targetGroupId = state.nextGroupId++;
-  } else {
-    targetGroupId = existingGroupIds[0];
-  }
-
-  for (const id of candidateIds) {
-    state.groups[id] = targetGroupId;
-  }
-
-  for (const oldGroupId of existingGroupIds.slice(1)) {
-    for (const memberId of getGroupMembers(oldGroupId)) {
-      state.groups[memberId] = targetGroupId;
-    }
+  const groupId = state.nextGroupId++;
+  for (const id of selection) {
+    state.groups[id] = groupId;
   }
 
   state.selected.clear();
-  setStatus(`Updated relation group G${targetGroupId}.`);
+  setStatus(`Created glue group G${groupId}.`);
   render();
 }
 
@@ -366,7 +289,9 @@ function unglueSelected() {
     const gid = state.groups[id];
     if (!gid) continue;
 
-    const members = getGroupMembers(gid);
+    const members = Object.entries(state.groups)
+      .filter(([, groupId]) => groupId === gid)
+      .map(([memberId]) => memberId);
 
     for (const memberId of members) {
       delete state.groups[memberId];
@@ -387,7 +312,6 @@ function resetBoard() {
   }
 
   state.groups = {};
-  state.sandbox.links = [];
   state.selected.clear();
   state.nextGroupId = 1;
   setStatus("Board reset.");
@@ -398,288 +322,14 @@ function setStatus(text) {
   statusEl.textContent = text;
 }
 
-let saveTimer = null;
-
-function saveSession(options = {}) {
-  const { silent = false } = options;
-  const payload = {
-    schemaVersion: STORAGE_SCHEMA_VERSION,
-    assignments: state.assignments,
-    groups: state.groups,
-    sandbox: state.sandbox,
-    nextGroupId: state.nextGroupId,
-    savedAt: new Date().toISOString(),
-  };
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  if (!silent) {
-    setStatus(`Session saved (${new Date().toLocaleTimeString()}).`);
-  }
-}
-
-function scheduleSave() {
-  if (saveTimer) {
-    clearTimeout(saveTimer);
-  }
-  saveTimer = setTimeout(() => {
-    saveSession({ silent: true });
-    saveTimer = null;
-  }, 250);
-}
-
-function clearSession() {
-  sessionStorage.removeItem(STORAGE_KEY);
-}
-
-function loadSession() {
-  const raw = sessionStorage.getItem(STORAGE_KEY);
-  if (!raw) return false;
-
-  try {
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") return false;
-
-    if (parsed.assignments && typeof parsed.assignments === "object") {
-      for (const category of rowOrder) {
-        const incoming = parsed.assignments[category];
-        if (!incoming || typeof incoming !== "object") continue;
-        for (const house of houses) {
-          state.assignments[category][house] = incoming[house] ?? null;
-        }
-      }
-    }
-
-    if (parsed.groups && typeof parsed.groups === "object") {
-      state.groups = parsed.groups;
-    }
-
-    if (parsed.sandbox && typeof parsed.sandbox === "object") {
-      state.sandbox.positions = parsed.sandbox.positions || {};
-      state.sandbox.links = Array.isArray(parsed.sandbox.links) ? parsed.sandbox.links : [];
-      state.sandbox.nextLinkId =
-        typeof parsed.sandbox.nextLinkId === "number" && parsed.sandbox.nextLinkId > 0
-          ? parsed.sandbox.nextLinkId
-          : 1;
-    }
-
-    if (typeof parsed.nextGroupId === "number" && parsed.nextGroupId > 0) {
-      state.nextGroupId = parsed.nextGroupId;
-    }
-
-    if ((parsed.schemaVersion || 1) < STORAGE_SCHEMA_VERSION) {
-      ensureSandboxPositions();
-      saveSession();
-    }
-
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function render() {
   renderBoard();
   renderTokenPools();
-  renderSandboxGroups();
-  renderFreeSandbox();
-  scheduleSave();
-}
-
-function renderSandboxGroups() {
-  const groups = {};
-  for (const [id, groupId] of Object.entries(state.groups)) {
-    if (!groups[groupId]) groups[groupId] = [];
-    groups[groupId].push(id);
-  }
-
-  sandboxGroupsEl.innerHTML = "";
-  const groupIds = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
-
-  if (groupIds.length === 0) {
-    const empty = document.createElement("p");
-    empty.textContent = "Brak relacji. Zaznacz minimum 2 etykiety i kliknij Glue Selected.";
-    sandboxGroupsEl.appendChild(empty);
-    return;
-  }
-
-  for (const groupId of groupIds) {
-    const card = document.createElement("div");
-    card.className = "sandbox-group";
-
-    const header = document.createElement("div");
-    header.className = "sandbox-group-header";
-
-    const title = document.createElement("p");
-    title.className = "sandbox-group-title";
-    title.textContent = `Group G${groupId}`;
-
-    const removeBtn = document.createElement("button");
-    removeBtn.type = "button";
-    removeBtn.textContent = "Remove Group";
-    removeBtn.addEventListener("click", () => {
-      for (const memberId of groups[groupId]) {
-        delete state.groups[memberId];
-      }
-      setStatus(`Removed group G${groupId}.`);
-      render();
-    });
-
-    header.appendChild(title);
-    header.appendChild(removeBtn);
-
-    const items = document.createElement("div");
-    items.className = "sandbox-group-items";
-    for (const id of groups[groupId]) {
-      items.appendChild(createTokenElement(id));
-    }
-
-    card.appendChild(header);
-    card.appendChild(items);
-    sandboxGroupsEl.appendChild(card);
-  }
-}
-
-function getTokenCenterInSandbox(id) {
-  const pos = state.sandbox.positions[id];
-  if (!pos) return null;
-  return { x: pos.x + 45, y: pos.y + 16 };
-}
-
-function createSandboxLink(type) {
-  const selection = [...state.selected];
-  if (selection.length !== 2) {
-    setStatus("Select exactly 2 labels to add a sandbox relation.");
-    return;
-  }
-
-  const [a, b] = selection;
-  const exists = state.sandbox.links.some(
-    (link) => link.type === type && ((link.a === a && link.b === b) || (link.a === b && link.b === a)),
-  );
-  if (exists) {
-    setStatus("This relation already exists in sandbox.");
-    return;
-  }
-
-  state.sandbox.links.push({
-    id: state.sandbox.nextLinkId++,
-    a,
-    b,
-    type,
-  });
-  setStatus(`Added relation: ${type}.`);
-  render();
-}
-
-function deleteSandboxLink(id) {
-  state.sandbox.links = state.sandbox.links.filter((link) => link.id !== id);
-  setStatus("Relation removed.");
-  render();
-}
-
-function makeSandboxDraggable(el, id) {
-  let dragState = null;
-  el.addEventListener("pointerdown", (event) => {
-    dragState = {
-      startX: event.clientX,
-      startY: event.clientY,
-      originX: state.sandbox.positions[id].x,
-      originY: state.sandbox.positions[id].y,
-    };
-    el.setPointerCapture(event.pointerId);
-  });
-
-  el.addEventListener("pointermove", (event) => {
-    if (!dragState) return;
-    const dx = event.clientX - dragState.startX;
-    const dy = event.clientY - dragState.startY;
-    state.sandbox.positions[id].x = Math.max(0, dragState.originX + dx);
-    state.sandbox.positions[id].y = Math.max(0, dragState.originY + dy);
-    renderFreeSandbox();
-    scheduleSave();
-  });
-
-  el.addEventListener("pointerup", () => {
-    dragState = null;
-  });
-}
-
-function renderFreeSandbox() {
-  ensureSandboxPositions();
-  freeSandboxItemsEl.innerHTML = "";
-  sandboxLinksSvgEl.innerHTML = "";
-  sandboxLinksListEl.innerHTML = "";
-
-  for (const id of getAllTokenIds()) {
-    const item = createTokenElement(id);
-    item.classList.add("sandbox-item");
-    const pos = state.sandbox.positions[id];
-    item.style.left = `${pos.x}px`;
-    item.style.top = `${pos.y}px`;
-    makeSandboxDraggable(item, id);
-    freeSandboxItemsEl.appendChild(item);
-  }
-
-  for (const link of state.sandbox.links) {
-    const a = getTokenCenterInSandbox(link.a);
-    const b = getTokenCenterInSandbox(link.b);
-    if (!a || !b) continue;
-
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", String(a.x));
-    line.setAttribute("y1", String(a.y));
-    line.setAttribute("x2", String(b.x));
-    line.setAttribute("y2", String(b.y));
-    line.setAttribute("class", "sandbox-link-line");
-    sandboxLinksSvgEl.appendChild(line);
-  }
-
-  const list = document.createElement("ul");
-  list.className = "sandbox-link-list";
-  if (state.sandbox.links.length === 0) {
-    const empty = document.createElement("p");
-    empty.textContent = "No free-sandbox links yet. Select 2 labels and add a relation.";
-    sandboxLinksListEl.appendChild(empty);
-    return;
-  }
-  for (const link of state.sandbox.links) {
-    const row = document.createElement("li");
-    row.className = "sandbox-link-row";
-
-    const left = document.createElement("span");
-    left.textContent = `${parseToken(link.a).value} ${link.type} ${parseToken(link.b).value}`;
-    const removeBtn = document.createElement("button");
-    removeBtn.type = "button";
-    removeBtn.textContent = "Remove";
-    removeBtn.addEventListener("click", () => deleteSandboxLink(link.id));
-
-    row.appendChild(left);
-    row.appendChild(removeBtn);
-    list.appendChild(row);
-  }
-  sandboxLinksListEl.appendChild(list);
 }
 
 glueBtn.addEventListener("click", glueSelected);
 unglueBtn.addEventListener("click", unglueSelected);
 resetBtn.addEventListener("click", resetBoard);
-saveBtn.addEventListener("click", () => {
-  saveSession();
-});
-restoreBtn.addEventListener("click", () => {
-  const ok = loadSession();
-  ensureSandboxPositions();
-  render();
-  setStatus(ok ? "Session restored." : "No saved session found.");
-});
-clearSessionBtn.addEventListener("click", () => {
-  clearSession();
-  setStatus("Session storage cleared.");
-});
-linkSameBtn.addEventListener("click", () => createSandboxLink("same_house"));
-linkLeftBtn.addEventListener("click", () => createSandboxLink("left_of"));
-linkNextBtn.addEventListener("click", () => createSandboxLink("next_to"));
 
-const restored = loadSession();
-ensureSandboxPositions();
 render();
-setStatus(restored ? "Session restored." : "Ready.");
+setStatus("Ready.");
