@@ -1,0 +1,189 @@
+:root {
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --line: #d7dbe7;
+  --text: #1f2532;
+  --accent: #3366ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+button {
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--accent);
+}
+
+#status {
+  margin: 0;
+  color: #445;
+  font-size: 0.95rem;
+}
+
+.board {
+  overflow-x: auto;
+}
+
+.board-grid {
+  min-width: 920px;
+  display: grid;
+  grid-template-columns: 150px repeat(5, 1fr);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cell {
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  min-height: 68px;
+  padding: 0.4rem;
+  background: #fff;
+}
+
+.row-label,
+.house-label {
+  font-weight: 700;
+  background: #f2f5ff;
+}
+
+.drop-zone {
+  min-height: 52px;
+  border: 2px dashed transparent;
+  border-radius: 8px;
+}
+
+.drop-zone.drag-over {
+  border-color: var(--accent);
+  background: #eef3ff;
+}
+
+.tokens {
+  display: grid;
+  gap: 1rem;
+}
+
+.token-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.token-group {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.token-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.token {
+  border: 1px solid #ccd4ef;
+  background: #f8faff;
+  border-radius: 999px;
+  padding: 0.32rem 0.7rem;
+  cursor: grab;
+  user-select: none;
+}
+
+.token.selected {
+  outline: 2px solid #ff8f00;
+}
+
+.token[data-group] {
+  border-width: 2px;
+}
+
+.group-badge {
+  display: inline-block;
+  min-width: 1.2rem;
+  text-align: center;
+  margin-left: 0.3rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #101426;
+  background: #e8edff;
+  padding: 0.05rem 0.3rem;
+}
+
+.clues h2 {
+  margin-top: 0;
+}
+
+.sandbox h2 {
+  margin-top: 0;
+}
+
+#sandbox-groups {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.sandbox-group {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: #fcfdff;
+}
+
+.sandbox-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  gap: 1rem;
+}
+
+.sandbox-group-title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.sandbox-group-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
