@@ -152,38 +152,3 @@ button:hover {
 .clues h2 {
   margin-top: 0;
 }
-
-.sandbox h2 {
-  margin-top: 0;
-}
-
-#sandbox-groups {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.sandbox-group {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 0.75rem;
-  background: #fcfdff;
-}
-
-.sandbox-group-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-  gap: 1rem;
-}
-
-.sandbox-group-title {
-  margin: 0;
-  font-weight: 700;
-}
-
-.sandbox-group-items {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
