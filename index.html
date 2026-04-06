@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Einstein Puzzle – Sprint 1 POC</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>Einstein Puzzle (Fish Puzzle) – POC</h1>
+        <p>
+          Drag items into the five houses. Select two items from different categories and click
+          <strong>Glue Selected</strong> to keep them linked.
+        </p>
+      </header>
+
+      <section class="controls card">
+        <button id="glue-btn" type="button">Glue Selected</button>
+        <button id="unglue-btn" type="button">Unglue Selected</button>
+        <button id="reset-btn" type="button">Reset Board</button>
+        <button id="save-btn" type="button">Save Session</button>
+        <button id="restore-btn" type="button">Restore Session</button>
+        <button id="clear-session-btn" type="button">Clear Session</button>
+        <p id="status" aria-live="polite"></p>
+      </section>
+
+      <section class="board card" id="board"></section>
+
+      <section class="tokens card" id="tokens"></section>
+
+      <section class="sandbox card">
+        <h2>Piaskownica powiązań</h2>
+        <p>Łącz etykiety (np. <em>Swede</em> + <em>Pall Mall</em>) bez przypisywania ich do domu.</p>
+        <div id="sandbox-groups"></div>
+      </section>
+
+      <section class="free-sandbox card">
+        <h2>Free Sandbox</h2>
+        <div class="sandbox-toolbar">
+          <button id="link-same" type="button">Link: same_house</button>
+          <button id="link-left" type="button">Link: left_of</button>
+          <button id="link-next" type="button">Link: next_to</button>
+          <button id="reset-selected-link" type="button">Reset selected link</button>
+        </div>
+        <div class="free-sandbox-stage" id="free-sandbox-stage">
+          <svg id="sandbox-links-svg"></svg>
+          <div id="free-sandbox-items"></div>
+        </div>
+        <div id="sandbox-links-list"></div>
+      </section>
+
+      <section class="clues card">
+        <h2>Starter clues (sample)</h2>
+        <ul>
+          <li>The Brit lives in the red house.</li>
+          <li>The Swede keeps dogs.</li>
+          <li>The Dane drinks tea.</li>
+          <li>The owner of the yellow house smokes Dunhill.</li>
+          <li>The German smokes Prince.</li>
+        </ul>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
