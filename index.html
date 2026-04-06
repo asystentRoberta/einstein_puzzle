@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Einstein Puzzle – Sprint 1 POC</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>Einstein Puzzle (Fish Puzzle) – POC</h1>
+        <p>
+          Drag items into the five houses. Select two items from different categories and click
+          <strong>Glue Selected</strong> to keep them linked.
+        </p>
+      </header>
+
+      <section class="controls card">
+        <button id="glue-btn" type="button">Glue Selected</button>
+        <button id="unglue-btn" type="button">Unglue Selected</button>
+        <button id="reset-btn" type="button">Reset Board</button>
+        <p id="status" aria-live="polite"></p>
+      </section>
+
+      <section class="board card" id="board"></section>
+
+      <section class="tokens card" id="tokens"></section>
+
+      <section class="clues card">
+        <h2>Starter clues (sample)</h2>
+        <ul>
+          <li>The Brit lives in the red house.</li>
+          <li>The Swede keeps dogs.</li>
+          <li>The Dane drinks tea.</li>
+          <li>The owner of the yellow house smokes Dunhill.</li>
+          <li>The German smokes Prince.</li>
+        </ul>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
